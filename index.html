@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>A.G.W. Pay</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: #f4f5f7; color: #333; padding-bottom: 30px; }
+        
+        /* Top Header Area */
+        .header { background-color: #fff; padding: 20px; border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
+        .profile-badge { display: inline-flex; align-items: center; background: #f0f2f5; padding: 5px 15px 5px 5px; border-radius: 30px; }
+        .profile-badge img { width: 35px; height: 35px; border-radius: 50%; margin-right: 10px; }
+        .profile-info h3 { font-size: 13px; font-weight: 700; text-transform: uppercase; }
+        .profile-info span { font-size: 11px; color: #888; }
+        
+        .balance-sec { text-align: center; margin-top: 30px; margin-bottom: 10px; }
+        .balance-sec p { font-size: 12px; color: #888; font-weight: 600; letter-spacing: 1px; }
+        .balance-sec h1 { font-size: 42px; font-weight: 700; margin-top: 5px; color: #111; }
+        .balance-sec h1 span { font-size: 24px; color: #888; vertical-align: super; }
+        
+        /* Section Titles */
+        .section-title { font-size: 12px; color: #888; font-weight: 700; margin: 25px 20px 10px; letter-spacing: 0.5px; text-transform: uppercase; }
+        
+        /* Quick Withdraw Card */
+        .quick-card { background: #fff; margin: 0 20px; padding: 15px 20px; border-radius: 15px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 15px rgba(0,0,0,0.03); cursor: pointer; }
+        .icon-box { display: flex; align-items: center; }
+        .icon-box-inner { width: 40px; height: 40px; background: #f8fdf8; border-radius: 10px; display: flex; justify-content: center; align-items: center; margin-right: 15px; }
+        .quick-text h4 { font-size: 15px; font-weight: 700; }
+        .quick-text p { font-size: 12px; color: #888; margin-top: 2px;}
+        
+        /* Grid Section */
+        .grid-container { background: #fff; margin: 0 20px; padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        .grid-item { display: flex; flex-direction: column; align-items: center; position: relative; cursor: pointer; }
+        .grid-icon { width: 60px; height: 60px; border-radius: 20px; display: flex; justify-content: center; align-items: center; margin-bottom: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
+        .grid-item h5 { font-size: 13px; font-weight: 600; color: #333; }
+        .grid-item p { font-size: 10px; color: #999; margin-top: 3px; }
+        .badge { position: absolute; top: -5px; right: -5px; font-size: 9px; font-weight: 700; padding: 3px 6px; border-radius: 8px; color: #fff; }
+        .badge.best { background: #69f0ae; } .badge.hot { background: #ffab40; } .badge.new { background: #b388ff; }
+
+        /* Icon Custom SVGs & Colors */
+        .ic-upi { background: #fff; border: 1px solid #f0f0f0; }
+        .ic-usdt { background: #e0f2f1; }
+        .ic-bank { background: #ffe8a1; font-size: 24px;}
+        .ic-paytm { background: #e1f5fe; font-size: 24px;}
+        .ic-crypto { background: #d1c4e9; font-size: 24px;}
+        .ic-other { background: #ffccbc; font-size: 24px;}
+
+        /* Recent Transactions */
+        .recent-container { margin: 0 20px; }
+        .recent-item { background: #fff; padding: 15px; margin-bottom: 10px; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
+        .recent-left { display: flex; align-items: center; }
+        .recent-icon { width: 35px; height: 35px; background: #f4f5f7; border-radius: 10px; display: flex; justify-content: center; align-items: center; margin-right: 12px; }
+        .recent-info h4 { font-size: 14px; font-weight: 700; color: #111; }
+        .recent-info p { font-size: 11px; color: #888; margin-top: 3px; }
+        .recent-right { text-align: right; }
+        .recent-right h4 { font-size: 14px; font-weight: 700; color: #111; }
+        .status-badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: 700; margin-top: 4px; }
+        .status-done { background: #e8f5e9; color: #4caf50; }
+        .status-pending { background: #fff3e0; color: #ff9800; }
+
+        /* Modal / Form */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: flex-end; z-index: 1000; }
+        .modal-content { background: #fff; width: 100%; padding: 25px 20px; border-top-left-radius: 25px; border-top-right-radius: 25px; animation: slideUp 0.3s ease-out forwards; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .modal-header { display: flex; justify-content: space-between; margin-bottom: 20px; }
+        .modal-header h2 { font-size: 18px; font-weight: 700; }
+        .close-btn { font-size: 20px; font-weight: bold; color: #888; cursor: pointer; }
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; font-size: 12px; font-weight: 600; color: #666; margin-bottom: 5px; }
+        .input-group input, .input-group select { width: 100%; padding: 15px; border: 1px solid #ddd; border-radius: 12px; font-size: 16px; outline: none; background: #f9f9f9; }
+        .submit-btn { width: 100%; padding: 16px; background: #111; color: #fff; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; margin-top: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="profile-badge">
+            <img src="https://ui-avatars.com/api/?name=AG&background=000&color=fff" id="userAvatar" alt="Avatar">
+            <div class="profile-info">
+                <h3 id="userName">Anuj Gamex</h3>
+                <span>🇮🇳 India</span>
+            </div>
+        </div>
+        <div class="balance-sec">
+            <p>AVAILABLE BALANCE</p>
+            <h1><span>₹</span><span id="displayBalance">0.00</span></h1>
+        </div>
+    </div>
+
+    <div class="section-title">QUICK WITHDRAW</div>
+    <div class="quick-card" onclick="openModal('UPI')">
+        <div class="icon-box">
+            <div class="icon-box-inner">
+                <!-- Custom UPI Logo -->
+                <svg width="24" height="24" viewBox="0 0 32 32">
+                    <path d="M10 5 L22 16 L10 27 Z" fill="#ffca28"/>
+                    <path d="M5 10 L17 21 L5 32 Z" fill="#4caf50" opacity="0.9"/>
+                </svg>
+            </div>
+            <div class="quick-text">
+                <h4>UPI Transfer</h4>
+                <p>Fast & Secure</p>
+            </div>
+        </div>
+        <div class="quick-text" style="text-align: right;">
+            <h4 style="color: #4caf50;">₹0.00 Fee</h4>
+        </div>
+    </div>
+
+    <div class="section-title">WITHDRAW TO</div>
+    <div class="grid-container">
+        <div class="grid-item" onclick="openModal('UPI')">
+            <div class="badge best">BEST</div>
+            <div class="grid-icon ic-upi">
+                <!-- Custom UPI Logo -->
+                <svg width="30" height="30" viewBox="0 0 32 32">
+                    <path d="M10 5 L22 16 L10 27 Z" fill="#ffca28"/>
+                    <path d="M5 10 L17 21 L5 32 Z" fill="#4caf50" opacity="0.9"/>
+                </svg>
+            </div>
+            <h5>UPI</h5><p>Min ₹20</p>
+        </div>
+
+        <div class="grid-item" onclick="openModal('USDT')">
+            <div class="badge hot">HOT</div>
+            <div class="grid-icon ic-usdt">
+                <!-- Custom USDT Logo -->
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" fill="#26a69a"/>
+                    <path d="M9 8h6v2h-2.5v7h-2v-7H9V8z" fill="#fff"/>
+                </svg>
+            </div>
+            <h5>USDT</h5><p>Min ₹85</p>
+        </div>
+
+        <div class="grid-item" onclick="openModal('Bank')">
+            <div class="badge new">NEW</div>
+            <div class="grid-icon ic-bank">🏦</div>
+            <h5>Bank</h5><p>Min ₹50</p>
+        </div>
+
+        <div class="grid-item" onclick="openModal('Paytm')">
+            <div class="grid-icon ic-paytm">📱</div>
+            <h5>Paytm</h5><p>Min ₹20</p>
+        </div>
+
+        <div class="grid-item" onclick="openModal('Crypto')">
+            <div class="grid-icon ic-crypto">₿</div>
+            <h5>Crypto</h5><p>Min ₹100</p>
+        </div>
+
+        <div class="grid-item" onclick="openModal('Other')">
+            <div class="grid-icon ic-other">🌐</div>
+            <h5>Other</h5><p>Min ₹50</p>
+        </div>
+    </div>
+
+    <div class="section-title">RECENT</div>
+    <div class="recent-container" id="recentHistory">
+        <!-- History will be injected here via JavaScript -->
+    </div>
+
+    <!-- Modal Form -->
+    <div class="modal-overlay" id="withdrawModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Withdraw</h2>
+                <div class="close-btn" onclick="closeModal()">✕</div>
+            </div>
+            <div class="input-group">
+                <label>Amount (₹)</label>
+                <input type="number" id="amount" placeholder="Enter Amount..." min="20">
+            </div>
+            <div class="input-group">
+                <label id="detailsLabel">Payment Details</label>
+                <input type="text" id="details" placeholder="Enter details...">
+            </div>
+            <div class="input-group">
+                <label>Speed</label>
+                <select id="speed">
+                    <option value="std">Standard (Free, 24h)</option>
+                    <option value="urg">Urgent (₹15 Fee, 1h)</option>
+                </select>
+            </div>
+            <input type="hidden" id="selectedMethod">
+            <button class="submit-btn" onclick="submitWithdraw()">Proceed to Withdraw</button>
+        </div>
+    </div>
+
+    <script>
+        let tg = window.Telegram.WebApp;
+        tg.expand();
+
+        // 1. Fetch User Data Automatically
+        const user = tg.initDataUnsafe?.user;
+        let displayName = "Anuj Gamex"; 
+        if (user && user.first_name) {
+            displayName = user.first_name + (user.last_name ? " " + user.last_name : "");
+        }
+        document.getElementById('userName').innerText = displayName;
+        document.getElementById('userAvatar').src = `https://ui-avatars.com/api/?name=${displayName}&background=000&color=fff`;
+
+        // 2. Extract Balance & History from URL parameters (Sent by Python Bot)
+        const urlParams = new URLSearchParams(window.location.search);
+        const balance = urlParams.get('bal') || "0.00";
+        document.getElementById('displayBalance').innerText = balance;
+
+        const hist = urlParams.get('hist');
+        const histContainer = document.getElementById('recentHistory');
+        
+        if (hist) {
+            const items = hist.split(',');
+            let htmlContent = '';
+            items.forEach(item => {
+                const parts = item.split('|');
+                if (parts.length >= 3) {
+                    const method = parts[0];
+                    const amt = parts[1];
+                    const status = parts[2];
+                    
+                    let statusClass = status === 'Done' ? 'status-done' : 'status-pending';
+                    let iconSVG = method.includes('UPI') ? 
+                        `<svg width="20" height="20" viewBox="0 0 32 32"><path d="M10 5 L22 16 L10 27 Z" fill="#ffca28"/><path d="M5 10 L17 21 L5 32 Z" fill="#4caf50" opacity="0.9"/></svg>` : 
+                        `<svg width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#26a69a"/><path d="M9 8h6v2h-2.5v7h-2v-7H9V8z" fill="#fff"/></svg>`;
+
+                    htmlContent += `
+                        <div class="recent-item">
+                            <div class="recent-left">
+                                <div class="recent-icon">${iconSVG}</div>
+                                <div class="recent-info">
+                                    <h4>${method}</h4>
+                                    <p>Recent</p>
+                                </div>
+                            </div>
+                            <div class="recent-right">
+                                <h4>₹${amt.replace('-', '')}</h4>
+                                <div class="status-badge ${statusClass}">${status}</div>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+            histContainer.innerHTML = htmlContent;
+        } else {
+            histContainer.innerHTML = '<p style="text-align:center; color:#888; font-size:12px; margin-top:10px;">No recent transactions</p>';
+        }
+
+        // Modal Logic
+        const modal = document.getElementById('withdrawModal');
+        function openModal(method) {
+            document.getElementById('selectedMethod').value = method;
+            document.getElementById('modalTitle').innerText = 'Withdraw via ' + method;
+            let label = document.getElementById('detailsLabel');
+            let input = document.getElementById('details');
+            let amtInput = document.getElementById('amount');
+            
+            if (method === 'UPI' || method === 'Paytm') {
+                label.innerText = 'UPI ID / Number'; input.placeholder = 'e.g. you@ybl'; amtInput.min = 20;
+            } else if (method === 'USDT' || method === 'Crypto') {
+                label.innerText = 'Wallet Address'; input.placeholder = 'Enter receiving address...'; amtInput.min = 85;
+            } else if (method === 'Bank') {
+                label.innerText = 'Account No & IFSC'; input.placeholder = 'Enter Bank details...'; amtInput.min = 50;
+            } else {
+                label.innerText = 'Account Details'; input.placeholder = 'Enter details...'; amtInput.min = 20;
+            }
+            modal.style.display = 'flex';
+        }
+
+        function closeModal() { modal.style.display = 'none'; }
+
+        function submitWithdraw() {
+            let amount = document.getElementById('amount').value;
+            let details = document.getElementById('details').value;
+            let speed = document.getElementById('speed').value;
+            let method = document.getElementById('selectedMethod').value;
+            
+            if (!amount || amount < 20) { tg.showAlert("Please enter a valid amount (Min ₹20)!"); return; }
+            if (!details) { tg.showAlert("Please enter your payment details!"); return; }
+
+            let data = { action: "withdraw", amount: amount, speed: speed, method: method, details: details };
+            tg.sendData(JSON.stringify(data));
+            tg.close();
+        }
+    </script>
+</body>
+</html>
+
